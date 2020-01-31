@@ -1,0 +1,24 @@
+{
+  "extends": [
+    "tslint:latest",
+    "tslint-config-prettier",
+    "tslint-config-airbnb"
+  ],
+  "rules": {
+    "no-var-keyword": false,
+    "prefer-const": false,
+    "member-access": false,
+    "semicolon": true,
+    "no-implicit-dependencies": false,
+    "object-literal-sort-keys": false,
+    "no-console": false,
+    "no-submodule-imports": false,
+    "no-unused-variable": true,
+    "import-name": false,
+    "ter-arrow-parens": false,
+    "variable-name": false,
+    "quotemark": false,
+    "prefer-array-literal": false,
+    "align": false
+  }
+}
