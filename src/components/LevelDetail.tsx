@@ -1,10 +1,11 @@
 import _ from "lodash";
-import React from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import ProgressBar from "react-flexible-progressbar";
 import "react-flexible-progressbar/dist/progressBar.css";
 import { useHistory, useParams } from "react-router";
 import styled from "styled-components";
 import { IQuestion, useQuestions, useSetUsedChoices } from "./DataProvider";
+import PieTimer from "./PieTimer";
 const QUESTION_NUMBER_PER_LEVEL = Number(
   process.env.REACT_APP_QUESTION_NUMBER as string,
 );
@@ -18,15 +19,38 @@ const Question: React.FC<{
   onChoosen: any;
   choices: string[];
 }> = props => {
-  React.useEffect(() => {
-    voice.playText(props.question.en);
-  }, [props.question]);
+  const { question, onChoosen } = props;
+  const restartTimer = useCallback(() => {
+    timerRef.current?.reflash();
+  }, []);
 
+  React.useEffect(() => {
+    voice.playText(question.en);
+    const handle = setTimeout(() => {
+      onChoosen(question, null, 5);
+      restartTimer();
+    }, 5000);
+    return () => clearTimeout(handle);
+  }, [onChoosen, question, restartTimer]);
+
+  const timeOnQuestion = useMemo(() => Date.now(), []);
   const [usedChoices, setUsedChoices] = useSetUsedChoices();
+  const timerRef = useRef<PieTimer>(null);
   return (
     <>
       <div id="question">
         <p>{props.question.en}</p>
+        <PieTimer
+          ref={timerRef}
+          height={40}
+          width={40}
+          duration={5 * 1000}
+          loops={1e10}
+          inverse={true}
+          className="your_class"
+          color={'lightgrey'}
+          backgroundColor={'#ffff'}
+        />
       </div>
       <div id="choices">
         {props.choices.map((choice, index) => (
@@ -35,8 +59,11 @@ const Question: React.FC<{
             style={{ pointerEvents: "auto" }}
             key={choice + index}
             onClick={() => {
+              restartTimer();
               setUsedChoices([...usedChoices, ...props.choices]);
-              props.onChoosen(props.question, choice);
+              const now = Date.now();
+              const diff = now - timeOnQuestion;
+              props.onChoosen(props.question, choice, diff / 1000);
             }}
           >
             {choice}
@@ -49,6 +76,7 @@ const Question: React.FC<{
 
 export type IQuestionAnswer = IQuestion & {
   userAnswer: string;
+  userTime: number;
 };
 const ProgressBarWrapper = styled.div`
   width: 100%;
@@ -91,13 +119,14 @@ export default () => {
   const question = React.useMemo(() => {
     return questions[currentIndex];
   }, [questions, currentIndex]);
-  const onChoosen = (currentQuestion: IQuestion, answer: string) => {
+  const onChoosen = (currentQuestion: IQuestion, answer: string, userTime: number) => {
     if (currentQuestion.meanings[1] !== answer) {
       // the 4th position in record !== user answer
       setWrongQAs([
         ...wrongQAs,
         {
           ...currentQuestion,
+          userTime,
           userAnswer: answer,
         },
       ]);
