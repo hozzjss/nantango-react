@@ -24,8 +24,8 @@ const ResultPageWrapper = styled.div`
   }
 `;
 
-const calculatePoints = (answers: IQuestionAnswer[]) => {
-  return answers.reduce((acc, next) => acc + next.questionPoints, 0);
+const calculatePoints = (answers: IQuestionAnswer[], level: number) => {
+  return answers.reduce((acc, next) => acc + (next.questionPoints * level), 0);
 };
 
 const filterWrongAnswers = (answers: IQuestionAnswer[]) => {
@@ -33,11 +33,11 @@ const filterWrongAnswers = (answers: IQuestionAnswer[]) => {
 };
 
 export default () => {
-  const history = useHistory<{ questionAnswers: IQuestionAnswer[] }>();
-  const QAs = history.location.state.questionAnswers;
+  const history = useHistory<{ questionAnswers: IQuestionAnswer[]; level: string }>();
+  const { questionAnswers: QAs, level } = history.location.state;
   const wrongAnswers = filterWrongAnswers(QAs);
   const now = new Date();
-  const userPoints = calculatePoints(QAs) * 100;
+  const userPoints = calculatePoints(QAs, Number(level));
   return (
     <ResultPageWrapper>
       <div id="namae">

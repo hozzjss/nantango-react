@@ -126,9 +126,10 @@ export default () => {
     if (currentIndex >= QUESTION_NUMBER_PER_LEVEL) {
       history.push("/result", {
         questionAnswers: answers,
+        level: params.id,
       });
     }
-  }, [currentIndex, history, answers]);
+  }, [currentIndex, history, answers, params]);
   return (
     <div id="quiz" style={{ display: "block" }}>
       {question && (
