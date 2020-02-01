@@ -1,5 +1,5 @@
 import _ from "lodash";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import ProgressBar from "react-flexible-progressbar";
 import "react-flexible-progressbar/dist/progressBar.css";
 import { useHistory, useParams } from "react-router";
@@ -22,6 +22,7 @@ const Question: React.FC<{
   const { question, onChoosen } = props;
 
   React.useEffect(() => {
+    console.log('current q', question.en);
     voice.playText(question.en);
     const handle = setTimeout(() => {
       onChoosen(question, null, 5);
@@ -107,20 +108,20 @@ export default () => {
   const question = React.useMemo(() => {
     return questions[currentIndex];
   }, [questions, currentIndex]);
-  const onChoosen = (currentQuestion: IQuestion, answer: string, userTime: number) => {
+  const onChoosen = useCallback((currentQuestion: IQuestion, answer: string, userTime: number) => {
     const isCorrect = currentQuestion.meanings[1] !== answer;
     const questionPoints = isCorrect ? 5 - userTime : 0;
     // the 4th position in record !== user answer
-    setAnswers([
-      ...answers,
+    setAnswers(ans => [
+      ...ans,
       {
         ...currentQuestion,
         questionPoints,
         userAnswer: answer,
       },
     ]);
-    setIndex(currentIndex + 1);
-  };
+    setIndex(i => i + 1);
+  }, []);
   React.useEffect(() => {
     if (currentIndex >= QUESTION_NUMBER_PER_LEVEL) {
       history.push("/result", {
