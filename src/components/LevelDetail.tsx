@@ -26,10 +26,14 @@ const Question: React.FC<{
     const handle = setTimeout(() => {
       onChoosen(question, null, 5);
     }, 5000);
-    return () => clearTimeout(handle);
+    return () => {
+      clearTimeout(handle);
+    };
   }, [onChoosen, question]);
 
-  const timeOnQuestion = useMemo(() => Date.now(), []);
+  // resets the current time once the time changed
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const timeOnQuestion = useMemo(() => Date.now(), [question]);
   const [usedChoices, setUsedChoices] = useSetUsedChoices();
   return (
     <>
@@ -46,7 +50,8 @@ const Question: React.FC<{
               setUsedChoices([...usedChoices, ...props.choices]);
               const now = Date.now();
               const diff = now - timeOnQuestion;
-              props.onChoosen(props.question, choice, diff / 1000);
+              // the || 1 is for the super fast people!!
+              props.onChoosen(props.question, choice, Math.round(diff / 1000) || 1);
             }}
           >
             {choice}
@@ -59,7 +64,7 @@ const Question: React.FC<{
 
 export type IQuestionAnswer = IQuestion & {
   userAnswer: string;
-  userTime: number;
+  questionPoints: number;
 };
 const ProgressBarWrapper = styled.div`
   width: 100%;
@@ -98,31 +103,31 @@ export default () => {
     return [];
   }, [totalChoices, currentIndex, questions]);
 
-  const [wrongQAs, setWrongQAs] = React.useState<IQuestionAnswer[]>([]);
+  const [answers, setAnswers] = React.useState<IQuestionAnswer[]>([]);
   const question = React.useMemo(() => {
     return questions[currentIndex];
   }, [questions, currentIndex]);
   const onChoosen = (currentQuestion: IQuestion, answer: string, userTime: number) => {
-    if (currentQuestion.meanings[1] !== answer) {
-      // the 4th position in record !== user answer
-      setWrongQAs([
-        ...wrongQAs,
-        {
-          ...currentQuestion,
-          userTime,
-          userAnswer: answer,
-        },
-      ]);
-    }
+    const isCorrect = currentQuestion.meanings[1] !== answer;
+    const questionPoints = isCorrect ? 5 - userTime : 0;
+    // the 4th position in record !== user answer
+    setAnswers([
+      ...answers,
+      {
+        ...currentQuestion,
+        questionPoints,
+        userAnswer: answer,
+      },
+    ]);
     setIndex(currentIndex + 1);
   };
   React.useEffect(() => {
     if (currentIndex >= QUESTION_NUMBER_PER_LEVEL) {
       history.push("/result", {
-        wrongQAs,
+        questionAnswers: answers,
       });
     }
-  }, [currentIndex, history, wrongQAs]);
+  }, [currentIndex, history, answers]);
   return (
     <div id="quiz" style={{ display: "block" }}>
       {question && (
